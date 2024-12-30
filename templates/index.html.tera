@@ -25,12 +25,10 @@
 			</li>
 		</ul>
 
-
 		<div id="footer">
-		    <a href="https://github.com/snltd/meetup-generator">The code.</a>
+		    <a href="https://github.com/snltd/meetup-generator-rs">The code.</a>
 		</div>
 	</div>
-
   </body>
 </html>
 {% macro talk(talk) %}
