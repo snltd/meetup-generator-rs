@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>#Devops Meetup</title>
+    <link href='/public/main.css' rel='stylesheet'/>
+  </head>
+
+  <body>
+	<div id="container">
+		<h1>#DevOps Meetup // {{ agenda.location }} // {{ agenda.date }}</h1>
+
+		<ul>
+        	<li>18:00 // Introduction</li>
+	        <li>18:10 // Lightning talk // {{ self::talk(talk=agenda.talks[0]) }}</li>
+	        <li>18:20 // {{ self::talk(talk=agenda.talks[1]) }}</li>
+        	<li>18:50 // break
+				<div class="indent">{{ agenda.refreshment }}</div>
+			</li>
+	        <li>19:20 // {{ self::talk(talk=agenda.talks[2]) }}</li>
+	        <li>19:40 // Ignite! // {{ self::talk(talk=agenda.talks[3]) }}</li>
+	        <li>20:00 // {{ self::talk(talk=agenda.talks[4]) }}</li>
+			<li>20:30 // Close 
+				<div class="indent">Everyone is hiring, but no one's paying</div>
+			</li>
+		</ul>
+
+
+		<div id="footer">
+		    <a href="https://github.com/snltd/meetup-generator">The code.</a>
+		</div>
+	</div>
+
+  </body>
+</html>
+{% macro talk(talk) %}
+<span class="ttitle">{{talk.title}}</span>
+<div class="indent">
+	{{talk.talker}} // {{talk.role}} @ <a href="https://{{talk.company}}">{{talk.company}}</a>
+</div>
+{% endmacro talk %}
+

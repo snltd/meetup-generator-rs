@@ -1,0 +1,40 @@
+verb = ["Test"]
+
+tech = ["Rust"]
+
+service = ["TestOps"]
+
+extreme = ["De-Risk"]
+
+quantifier = ["Polyglot Persistence"]
+
+time = ["Days"]
+
+food = ["avocado toast"]
+food_style = ["artisanal"]
+
+skill_level = ["Developer"]
+
+degree = ["Not"]
+
+company = ["Google"]
+
+driver = ["HackerNews"]
+
+adjective = ["12 Factor"]
+
+panacea = ["AI"]
+
+language = ["Zig"]
+
+something_ops = ["Chat"]
+
+template = ["%verb%ing the %tech% for Fun and Profit"]
+
+first_name = ["John"]
+
+last_name = ["Smith"]
+
+job_role = ["Full Stack"]
+
+job_title = ["Neckbeard without Portfolio"]
