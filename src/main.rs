@@ -7,11 +7,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use utils::types::{Agenda, Meetup, Talk};
 
+// Use Jemalloc only for musl-64 bits platforms
+#[cfg(all(target_env = "musl", target_pointer_width = "64"))]
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 #[macro_use]
 extern crate rocket;
-
-const THINGS: &str = "src/utils/all_the_things.toml";
-const WORDS: &str = "src/utils/words.gz";
 
 #[get("/")]
 fn index(meetup: &State<Arc<Meetup>>) -> Template {
@@ -49,12 +51,24 @@ fn api_item(meetup: &State<Arc<Meetup>>, item: &str) -> Option<Json<String>> {
 
 #[launch]
 fn rocket() -> _ {
+    let src_dir = PathBuf::from("src/utils");
+    let res_dir: PathBuf;
+    let static_dir: &str;
+
+    if src_dir.exists() {
+        res_dir = src_dir;
+        static_dir = "static";
+    } else {
+        res_dir = PathBuf::from("/");
+        static_dir = "/static";
+    };
+
     rocket::build()
         .manage(Arc::new(Meetup::new(
-            &PathBuf::from(THINGS),
-            &PathBuf::from(WORDS),
+            &res_dir.join("all_the_things.toml"),
+            &res_dir.join("words.gz"),
         )))
         .mount("/", routes![index, api_agenda, api_talk, api_item])
-        .mount("/public", FileServer::from("static"))
+        .mount("/public", FileServer::from(static_dir))
         .attach(Template::fairing())
 }

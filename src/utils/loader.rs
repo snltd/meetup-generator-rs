@@ -5,13 +5,16 @@ use std::io::{self, BufRead, BufReader};
 use std::path::Path;
 
 pub fn load_things(file: &Path) -> io::Result<AllTheThings> {
-    let raw = fs::read_to_string(file)?;
+    let raw = fs::read_to_string(file).expect(&format!(
+        "Cannot open all_the_things file: {}",
+        file.display()
+    ));
     let all_the_things: AllTheThings = toml::from_str(&raw).expect("Cannot parse all_the_things");
     Ok(all_the_things)
 }
 
 pub fn load_words(file: &Path) -> io::Result<Vec<String>> {
-    let file = fs::File::open(file)?;
+    let file = fs::File::open(file).expect(&format!("Cannot open words file: {}", file.display()));
     let decoder = GzDecoder::new(file);
     let reader = BufReader::new(decoder);
     let words: Vec<String> = reader.lines().map_while(|l| l.ok()).collect();
