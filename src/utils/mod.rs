@@ -1,5 +1,7 @@
 pub mod loader;
-pub mod spec_helper;
+pub mod meetup_generator;
 pub mod string;
-pub mod talk_generator;
 pub mod types;
+
+#[cfg(test)]
+pub mod spec_helper;

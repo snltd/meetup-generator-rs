@@ -1,15 +1,19 @@
 [package]
 name = "meetup-generator"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.95"
 flate2 = "1.0"
 rand = "0.8"
 regex = "1"
-rocket_dyn_templates = { version = "0.2", features = ["tera"] }
 rocket = { version = "0.5", features = ["json"] }
+rocket_dyn_templates = { version = "0.2", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
 tera = "1.20"
-time = { version = "0.3", features = ["local-offset", "formatting", "macros"] }
+time = { version = "0.3", features = ["formatting", "macros"] }
 toml = "0.8"
+
+[dev-dependencies]
+scraper = "0.22"

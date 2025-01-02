@@ -1,5 +1,6 @@
 mod utils;
 use rocket::fs::FileServer;
+use rocket::response::Redirect;
 use rocket::serde::json::Json;
 use rocket::State;
 use rocket_dyn_templates::{context, Template};
@@ -49,26 +50,113 @@ fn api_item(meetup: &State<Arc<Meetup>>, item: &str) -> Option<Json<String>> {
     Some(Json(result))
 }
 
+#[catch(404)]
+fn not_found() -> Redirect {
+    Redirect::to("/")
+}
+
 #[launch]
 fn rocket() -> _ {
-    let src_dir = PathBuf::from("src/utils");
-    let res_dir: PathBuf;
-    let static_dir: &str;
+    let mut root = PathBuf::from(rocket::fs::relative!("."));
 
-    if src_dir.exists() {
-        res_dir = src_dir;
-        static_dir = "static";
-    } else {
-        res_dir = PathBuf::from("/");
-        static_dir = "/static";
+    if !root.join("src").exists() {
+        root = PathBuf::from("/");
+    };
+
+    let res_dir = root.join("resources");
+    let static_dir = root.join("static");
+
+    let meetup_generator = match Meetup::new(
+        &res_dir.join("all_the_things.toml"),
+        &res_dir.join("words.gz"),
+    ) {
+        Ok(mg) => mg,
+        Err(e) => panic!("ERROR: Cannot instantiate meetup-generator: {}", e),
     };
 
     rocket::build()
-        .manage(Arc::new(Meetup::new(
-            &res_dir.join("all_the_things.toml"),
-            &res_dir.join("words.gz"),
-        )))
+        .manage(Arc::new(meetup_generator))
         .mount("/", routes![index, api_agenda, api_talk, api_item])
         .mount("/public", FileServer::from(static_dir))
+        .register("/", rocket::catchers![not_found])
         .attach(Template::fairing())
+}
+
+#[cfg(test)]
+mod test {
+    use super::rocket;
+    use rocket::http::{ContentType, Status};
+    use rocket::local::blocking::Client;
+    use scraper::{Html, Selector};
+    use std::collections::HashSet;
+
+    #[test]
+    fn test_renders_page() {
+        let client = Client::tracked(rocket()).expect("invalid instance");
+        let response = client.get(uri!(super::index)).dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.content_type().unwrap(), ContentType::HTML);
+        assert!(response.into_string().unwrap().contains("#Devops Meetup"));
+    }
+
+    #[test]
+    fn test_404_redirects_to_main_page() {
+        let client = Client::tracked(rocket()).expect("invalid instance");
+        let response = client.get("/some/nonsense/path").dispatch();
+        assert_eq!(response.status(), Status::SeeOther);
+        assert_eq!(response.headers().get_one("Location"), Some("/"));
+    }
+
+    #[test]
+    fn test_no_repeat_titles() {
+        let client = Client::tracked(rocket()).expect("invalid instance");
+
+        for _ in 0..400 {
+            let response = client.get(uri!(super::index)).dispatch();
+            let document = Html::parse_document(&response.into_string().unwrap());
+
+            let titles = Selector::parse("span[class=\"ttitle\"]").unwrap();
+            let mut seen = HashSet::new();
+
+            for element in document.select(&titles) {
+                let value = element.inner_html();
+                if seen.contains(&value) {
+                    panic!("Saw title twice");
+                } else {
+                    seen.insert(value);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_api() {
+        let client = Client::tracked(rocket()).expect("invalid instance");
+
+        let agenda_response = client.get(uri!(super::api_agenda)).dispatch();
+        assert_eq!(agenda_response.status(), Status::Ok);
+
+        let talk_response = client.get(uri!(super::api_talk)).dispatch();
+        assert_eq!(talk_response.status(), Status::Ok);
+
+        let items = vec![
+            "company",
+            "date",
+            "location",
+            "refreshments",
+            "role",
+            "talker",
+        ];
+
+        for item in items {
+            let item_response = client.get(uri!(super::api_item(item))).dispatch();
+            assert_eq!(
+                item_response.status(),
+                Status::Ok,
+                "failed on API item {}",
+                item
+            );
+            assert_eq!(item_response.content_type().unwrap(), ContentType::JSON);
+        }
+    }
 }

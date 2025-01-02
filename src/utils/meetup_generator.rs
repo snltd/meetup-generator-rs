@@ -1,6 +1,7 @@
 use crate::utils::loader::{load_things, load_words};
 use crate::utils::string::Companyize;
 use crate::utils::types::{Agenda, Meetup, Talk};
+use anyhow::anyhow;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use regex::Regex;
@@ -9,15 +10,21 @@ use time::macros::format_description;
 use time::{Duration, OffsetDateTime};
 
 impl Meetup {
-    pub fn new(things_file: &Path, words_file: &Path) -> Self {
-        let things = load_things(things_file).expect("failed to load things file");
-        let words = load_words(words_file).expect("failed to load words file");
+    pub fn new(things_file: &Path, words_file: &Path) -> anyhow::Result<Self> {
+        let things = match load_things(things_file) {
+            Ok(things) => things,
+            Err(e) => return Err(anyhow!("failed to load {}: {}", things_file.display(), e)),
+        };
+        let words = match load_words(words_file) {
+            Ok(words) => words,
+            Err(e) => return Err(anyhow!("failed to load {}: {}", words_file.display(), e)),
+        };
 
-        Self { things, words }
+        Ok(Self { things, words })
     }
 
     pub fn location(&self) -> String {
-        "Shoreditch, Probably".to_string()
+        "Shoreditch, probably".to_string()
     }
 
     pub fn date(&self) -> String {
@@ -123,7 +130,7 @@ impl Meetup {
     fn sample(&self, list: &[String]) -> String {
         let mut rng = rand::thread_rng();
         list.choose(&mut rng)
-            .expect("failed to get random sample")
+            .unwrap_or_else(|| panic!("failed to get random sample from {:?}", list))
             .to_owned()
     }
 }
@@ -133,12 +140,13 @@ mod test {
     use super::*;
     use crate::utils::spec_helper::fixture;
     use regex::Regex;
+    use std::path::PathBuf;
 
     #[test]
     fn test_meetup() {
-        let meetup = Meetup::new(&fixture("test_things.toml"), &fixture("test_words.gz"));
+        let meetup = Meetup::new(&fixture("test_things.toml"), &fixture("test_words.gz")).unwrap();
 
-        assert_eq!("Shoreditch, Probably".to_string(), meetup.location());
+        assert_eq!("Shoreditch, probably".to_string(), meetup.location());
 
         let date_regex = Regex::new(r"^[0123]\d\/[012]\d\/20\d\d$").unwrap();
         assert!(date_regex.is_match(&meetup.date()));
@@ -185,5 +193,22 @@ mod test {
             },
             meetup.talk("How to %extreme% Your %quantifier% by %degree% %verb%ing %tech%")
         );
+    }
+
+    // Run through every template. We'll get a panic if any aren't fillable.
+    #[test]
+    fn test_all_templates() {
+        let root = PathBuf::from(rocket::fs::relative!("."));
+        let res_dir = root.join("resources");
+
+        let meetup = Meetup::new(
+            &res_dir.join("all_the_things.toml"),
+            &res_dir.join("words.gz"),
+        )
+        .unwrap();
+
+        for t in meetup.things.template.iter() {
+            meetup.fill_template(t);
+        }
     }
 }
