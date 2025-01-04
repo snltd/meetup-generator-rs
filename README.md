@@ -2,9 +2,10 @@
 
 [![Test](https://github.com/snltd/meetup-generator-rs/actions/workflows/test.yml/badge.svg)](https://github.com/snltd/meetup-generator-rs/actions/workflows/test.yml)
 
-Built on an immutable polyglot femtoservice architecture, meetup-generator melds
-Deep ML with the power of the Blockchain to deliver planetscale insights into
-the direction of the most disruptive tech. On Kubernetes.
+Built on an immutable polyglot femtoservice architecture,
+[meetup-generator](https://meetup.id264.net) melds Deep ML with the power of the
+Blockchain to deliver planetscale insights into the direction of the most
+disruptive tech. On Kubernetes.
 
 Or perhaps it just puts random words into a template?
 
