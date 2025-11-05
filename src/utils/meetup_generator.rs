@@ -2,7 +2,7 @@ use crate::utils::loader::{load_things, load_words};
 use crate::utils::string::Companyize;
 use crate::utils::types::{Agenda, Meetup, Talk};
 use anyhow::anyhow;
-use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 use rand::Rng;
 use regex::Regex;
 use std::path::Path;
@@ -51,7 +51,7 @@ impl Meetup {
     }
 
     pub fn agenda(&self, talks: usize) -> Agenda {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let templates = self.things.template.choose_multiple(&mut rng, talks);
 
         Agenda {
@@ -76,7 +76,7 @@ impl Meetup {
     }
 
     fn something_ops(&self) -> String {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         format!(
             "{}Ops",
             self.things
@@ -95,7 +95,7 @@ impl Meetup {
             .parse::<usize>()
             .expect("cannot parse template number");
 
-        rand::thread_rng().gen_range(1..ceiling).to_string()
+        rand::rng().random_range(1..ceiling).to_string()
     }
 
     fn fill_template(&self, template: &str) -> String {
@@ -129,7 +129,7 @@ impl Meetup {
     }
 
     fn sample(&self, list: &[String]) -> String {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         list.choose(&mut rng)
             .unwrap_or_else(|| panic!("failed to get random sample from {:?}", list))
             .to_owned()
