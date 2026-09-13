@@ -5,15 +5,19 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.95"
+camino = "1.2.5"
 flate2 = "1.0"
+jiff = "0.2.37"
 rand = "0.10"
 regex = "1"
 rocket = { version = "0.5", features = ["json"] }
 rocket_dyn_templates = { version = "0.2", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
 tera = "2.3"
-time = { version = "0.3", features = ["formatting", "macros"] }
 toml = "1.1"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
 
 [dev-dependencies]
 scraper = "0.27"
+snltest = { git = "https://github.com/snltd/snltest.git" }
