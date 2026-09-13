@@ -1,24 +1,19 @@
-use crate::utils::loader::{load_things, load_words};
-use crate::utils::string::Companyize;
-use crate::utils::types::{Agenda, Meetup, Talk};
-use anyhow::anyhow;
+use super::loader::{load_things, load_words};
+use super::string::Companyize;
+use super::types::{Agenda, Meetup, Talk};
+use anyhow::Context;
+use camino::Utf8Path;
+use jiff::Zoned;
 use rand::prelude::IndexedRandom;
-use rand::Rng;
 use regex::Regex;
-use std::path::Path;
-use time::macros::format_description;
-use time::{Duration, OffsetDateTime};
 
 impl Meetup {
-    pub fn new(things_file: &Path, words_file: &Path) -> anyhow::Result<Self> {
-        let things = match load_things(things_file) {
-            Ok(things) => things,
-            Err(e) => return Err(anyhow!("failed to load {}: {}", things_file.display(), e)),
-        };
-        let words = match load_words(words_file) {
-            Ok(words) => words,
-            Err(e) => return Err(anyhow!("failed to load {}: {}", words_file.display(), e)),
-        };
+    pub fn new(things_file: &Utf8Path, words_file: &Utf8Path) -> anyhow::Result<Self> {
+        let things =
+            load_things(things_file).with_context(|| format!("failed to load {things_file}"))?;
+
+        let words =
+            load_words(words_file).with_context(|| format!("failed to load {words_file}"))?;
 
         Ok(Self { things, words })
     }
@@ -28,10 +23,8 @@ impl Meetup {
     }
 
     pub fn date(&self) -> String {
-        let today = OffsetDateTime::now_utc();
-        let tomorrow = today + Duration::days(1);
-        let format = format_description!("[day]/[month]/[year]");
-        tomorrow.format(&format).expect("Cannot format time")
+        let tomorrow = Zoned::now().tomorrow().expect("can't get tomorrow's date");
+        tomorrow.strftime("%d/%m/%Y").to_string()
     }
 
     pub fn talker(&self) -> String {
@@ -52,7 +45,7 @@ impl Meetup {
 
     pub fn agenda(&self, talks: usize) -> Agenda {
         let mut rng = rand::rng();
-        let templates = self.things.template.choose_multiple(&mut rng, talks);
+        let templates = self.things.template.sample(&mut rng, talks);
 
         Agenda {
             talks: templates.map(|t| self.talk(t)).collect(),
@@ -81,7 +74,7 @@ impl Meetup {
             "{}Ops",
             self.things
                 .something_ops
-                .choose_multiple(&mut rng, 4)
+                .sample(&mut rng, 4)
                 .cloned()
                 .collect::<Vec<String>>()
                 .join(""),
@@ -95,7 +88,7 @@ impl Meetup {
             .parse::<usize>()
             .expect("cannot parse template number");
 
-        rand::rng().random_range(1..ceiling).to_string()
+        rand::random_range(1..ceiling).to_string()
     }
 
     fn fill_template(&self, template: &str) -> String {
@@ -139,13 +132,14 @@ impl Meetup {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::utils::spec_helper::fixture;
+    use camino::Utf8PathBuf;
     use regex::Regex;
-    use std::path::PathBuf;
+    use snltest::fixture;
 
     #[test]
     fn test_meetup() {
-        let meetup = Meetup::new(&fixture("test_things.toml"), &fixture("test_words.gz")).unwrap();
+        let meetup =
+            Meetup::new(&fixture!("test_things.toml"), &fixture!("test_words.gz")).unwrap();
 
         assert_eq!("Shoreditch, probably".to_string(), meetup.location());
 
@@ -160,9 +154,7 @@ mod test {
         );
 
         assert_eq!("artisanal avocado toast".to_string(), meetup.refreshments());
-
         assert_eq!("prognosticatr.io".to_string(), meetup.company());
-
         assert_eq!("ChatOps".to_string(), meetup.something_ops());
 
         assert_eq!(
@@ -199,7 +191,7 @@ mod test {
     // Run through every template. We'll get a panic if any aren't fillable.
     #[test]
     fn test_all_templates() {
-        let root = PathBuf::from(rocket::fs::relative!("."));
+        let root = Utf8PathBuf::from(rocket::fs::relative!("."));
         let res_dir = root.join("resources");
 
         let meetup = Meetup::new(

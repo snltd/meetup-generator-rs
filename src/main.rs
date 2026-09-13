@@ -1,12 +1,12 @@
-mod utils;
+mod util;
+use crate::util::types::{Agenda, Meetup, Talk};
+use camino::Utf8PathBuf;
 use rocket::fs::FileServer;
 use rocket::response::Redirect;
 use rocket::serde::json::Json;
 use rocket::State;
 use rocket_dyn_templates::{context, Template};
-use std::path::PathBuf;
 use std::sync::Arc;
-use utils::types::{Agenda, Meetup, Talk};
 
 // Use Jemalloc only for musl-64 bits platforms
 #[cfg(all(target_env = "musl", target_pointer_width = "64"))]
@@ -57,10 +57,10 @@ fn not_found() -> Redirect {
 
 #[launch]
 fn rocket() -> _ {
-    let mut root = PathBuf::from(rocket::fs::relative!("."));
+    let mut root = Utf8PathBuf::from(rocket::fs::relative!("."));
 
     if !root.join("src").exists() {
-        root = PathBuf::from("/");
+        root = Utf8PathBuf::from("/");
     };
 
     let res_dir = root.join("resources");
