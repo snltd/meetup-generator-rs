@@ -8,13 +8,19 @@ on:
     paths:
       - Cargo.lock
       - Cargo.toml
-      - "**/*.rs"
+      - "src/**"
+      - "static/**"
+      - "templates/**"
+      - "resources/**"
       - .github/workflows/rust-tests.yml
   pull_request:
     paths:
       - Cargo.lock
       - Cargo.toml
-      - "**/*.rs"
+      - "src/**"
+      - "static/**"
+      - "templates/**"
+      - "resources/**"
       - .github/workflows/rust-tests.yml
 
 env:

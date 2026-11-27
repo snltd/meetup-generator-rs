@@ -6,6 +6,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - "src/**"
+      - "static/**"
+      - "templates/**"
+      - "resources/**"
+      - .github/workflows/fly.yml
+
 jobs:
   deploy:
     name: Deploy app
